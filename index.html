@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js - pointerlock controls</title>
+		<title>Apker/McNew - CS464 Final</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -175,6 +175,15 @@
 				scene.add( light );
 
 				controls = new THREE.PointerLockControls( camera );
+				
+				// rotate camera to view starting door
+				controls.getObject().rotation.y = -90*Math.PI/180;
+				
+				// starting room coordinate position
+				controls.getObject().position.x = -140;
+				controls.getObject().position.y = 10;
+				controls.getObject().position.z = 604;
+				
 				scene.add( controls.getObject() );
 
 				var onKeyDown = function ( event ) {
@@ -204,7 +213,6 @@
 							if ( canJump === true ) velocity.y += 350;
 							canJump = false;
 							break;
-
 					}
 
 				};
@@ -260,7 +268,7 @@
 					scene.add( mesh );
 
 				} );
-
+				
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
@@ -349,6 +357,9 @@
 					}
 				};
 			})();
+			
+			// used for debugging; when true, will print the xyz position of the actor to the console while moving
+			var REPORT_POSITION = false;	
 			function animate() {
 
 				requestAnimationFrame( animate );
@@ -374,14 +385,15 @@
 					direction.x = Number( moveLeft ) - Number( moveRight );
 					direction.normalize(); // this ensures consistent movements in all directions
 
-					if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
-					if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
+					if ( moveForward || moveBackward ) 
+						velocity.z -= direction.z * 400.0 * delta;
+					if ( moveLeft || moveRight ) 
+						velocity.x -= direction.x * 400.0 * delta;
 
 					if ( onObject === true ) {
-
+					
 						velocity.y = Math.max( 0, velocity.y );
 						canJump = true;
-
 					}
 
 					controls.getObject().translateX( velocity.x * delta );
@@ -391,19 +403,24 @@
 
 						velocity.y = 0;
 						//height of polygon below position
-
 						controls.getObject().position.y = 10;
-
 						canJump = true;
-
 					}
 
 					prevTime = time;
-
 				}
 
 				renderer.render( scene, camera );
-
+				
+				if(REPORT_POSITION) {
+				
+					var currX = controls.getObject().position.x.toFixed(4);
+					var currY = controls.getObject().position.y.toFixed(4);
+					var currZ = controls.getObject().position.z.toFixed(4);
+					
+					if(moveForward || moveBackward || moveLeft || moveRight || !canJump)	
+						console.log(currX + ", " + currY + ", " + currZ);
+				}
 			}
 
 		</script>
