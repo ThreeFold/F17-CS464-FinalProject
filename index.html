@@ -26,6 +26,7 @@
 				background-color: rgba(0,0,0,0.5);
 				
 				border-style: ridge;
+				border-width: 7px
 			}
 			
 			#blocker {
@@ -38,7 +39,100 @@
 			}
 			
 			#hud {
-				margin-top: -0.3%;
+				font-family: "Courier New";
+				font-weight: bold;
+				text-align: right;
+			
+				margin-top: -0.5%;
+				height: 102px;
+				
+				background-image: url("./src/textures/view/hud/hud_overlay.png");
+				background-size: 800px 102px;
+			}
+			
+			#ammo {
+				float: left;
+				
+				padding-top: 4px;
+				
+				height: 100%;
+				width: 13.6%;
+			
+				font-size: 42pt;
+				color: #b22020;
+				text-shadow: 2px 2px 4px #000000;
+			}
+			
+			#health {
+				float: left;
+			
+				padding-top: 4px;
+			
+				height: 100%;
+				width: 14.5%;
+			
+				font-size: 42pt;
+				color: #b22020;
+				text-shadow: 2px 2px 4px #000000;
+			}
+			
+			#arms {
+				float: left;
+			
+				padding-top: 6px;
+				padding-left: 10px;
+			
+				height: 100%;
+				width: 14.9%;
+			}
+			
+			#arms_panel {
+				height: 60%;
+				width: 72%;
+			}
+			
+			#faces {
+				float: left;
+				
+				padding-top: 3px;
+				margin-left: -30px;
+			}
+			
+			#face_panel {
+				height: 77%;
+				width: 77%;
+			}
+			
+			#armor {
+				float: left;
+			
+				padding-top: 4px;
+				margin-left: -18px;
+			
+				height: 100%;
+				width: 14.5%;
+			
+				font-size: 42pt;
+				color: #b22020;
+				text-shadow: 2px 2px 4px #000000;
+			}
+			
+			#all_ammo {
+				float: left;
+			
+				padding-top: 12px;
+				margin-left: 56px;
+			
+				height: 100%;
+				width: 14.5%;
+			
+				font-size: 15pt;
+				color: #ffff73;
+				text-shadow: 1px 1px 2px #000000;
+			}
+			
+			.ammo_type {
+				margin-bottom: -5px;
 			}
 			
 			#instructions {
@@ -371,6 +465,11 @@
 				// used for debugging; when true, will log the xyz position of the actor to the console while moving
 				var REPORT_POSITION = false;
 				
+				var ammoIdx, health, armor, ammo;
+				ammoIdx = armor = ammo[1] = ammo[2] = ammo[3] = 0;
+				health = 100;
+				ammo[ammoIdx] = 50;
+				
 				function animate() {
 
 					requestAnimationFrame( animate );
@@ -437,7 +536,35 @@
 			</script>
 			
 			<div id="hud">
-				<img src=".\src\textures\view\hud\hud_overlay.png" width="100%">
+				<div id="ammo">
+					50
+				</div>
+				<div id="health">
+					100
+				</div>
+				<div id="arms">
+					<img id="arms_panel" src="./src/textures/view/hud/arms/2.png">
+				</div>
+				<div id="faces">
+					<img id="face_panel" src="./src/textures/view/hud/faces/center/100.png">
+				</div>
+				<div id="armor">
+					100
+				</div>
+				<div id="all_ammo">
+					<div id="bull" class="ammo_type">
+						50
+					</div>
+					<div id="shel" class="ammo_type">
+						0
+					</div>
+					<div id="rckt" class="ammo_type">
+						0
+					</div>
+					<div id="cell" class="ammo_type">
+						0
+					</div>					
+				</div>
 			</div>
 		</div>
 	</body>
