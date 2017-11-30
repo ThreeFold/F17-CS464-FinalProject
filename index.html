@@ -107,21 +107,21 @@
 				float: left;
 			
 				padding-top: 4px;
-				margin-left: -18px;
+				margin-left: -15px;
 			
 				height: 100%;
 				width: 14.5%;
 			
 				font-size: 42pt;
 				color: #b22020;
-				text-shadow: 2px 2px 4px #000000;
+				text-shadow: 2px 2px 2px #000000;
 			}
 			
 			#all_ammo {
 				float: left;
 			
-				padding-top: 12px;
-				margin-left: 56px;
+				padding-top: 1.8%;
+				margin-left: 53px;
 			
 				height: 100%;
 				width: 14.5%;
@@ -132,7 +132,7 @@
 			}
 			
 			.ammo_type {
-				margin-bottom: -5px;
+				margin-bottom: -3.7%;
 			}
 			
 			#instructions {
@@ -177,7 +177,41 @@
 					(W, A, S, D = Move, SPACE = Jump, MOUSE = Look around)
 				</div>
 			</div>
-		
+			<div id="game_canvas">
+				<!--The game canvas is placed here after the script executes; do not remove!-->
+			</div>
+			<div id="hud">
+				<div id="ammo">
+					0
+				</div>
+				<div id="health">
+					0
+				</div>
+				<div id="arms">
+					<img id="arms_panel" src="./src/textures/view/hud/arms/2.png">
+				</div>
+				<div id="faces">
+					<img id="face_panel" src="./src/textures/view/hud/faces/center/100.png">
+				</div>
+				<div id="armor">
+					0
+				</div>
+				<div id="all_ammo">
+					<div id="bull" class="ammo_type">
+						0
+					</div>
+					<div id="shel" class="ammo_type">
+						0
+					</div>
+					<div id="rckt" class="ammo_type">
+						0
+					</div>
+					<div id="cell" class="ammo_type">
+						0
+					</div>					
+				</div>
+			</div>
+			
 			<script>
 				var camera, scene, renderer, controls;
 
@@ -204,7 +238,6 @@
 							controls.enabled = true;
 
 							blocker.style.display = 'none';
-
 						} else {
 
 							controls.enabled = false;
@@ -212,15 +245,12 @@
 							blocker.style.display = 'block';
 
 							instructions.style.display = '';
-
 						}
-
 					};
 
 					var pointerlockerror = function ( event ) {
 
 						instructions.style.display = '';
-
 					};
 
 					// Hook pointer lock state change events
@@ -249,6 +279,9 @@
 
 				var windowWidth = 800;
 				var windowHeight = 498;
+				
+				// HUD elements
+				var ammoIdx, health, armor, ammo;
 				
 				init();
 				animate();
@@ -317,7 +350,6 @@
 								canJump = false;
 								break;
 						}
-
 					};
 
 					var onKeyUp = function ( event ) {
@@ -343,9 +375,7 @@
 							case 68: // d
 								moveRight = false;
 								break;
-
 						}
-
 					};
 
 					document.addEventListener( 'keydown', onKeyDown, false );
@@ -376,12 +406,24 @@
 					renderer.setPixelRatio( window.devicePixelRatio );
 					renderer.setSize( windowWidth , windowHeight );
 					
-					var gameWindow = document.getElementById( "game_window" );
+					var gameWindow = document.getElementById( "game_canvas" );
 					gameWindow.appendChild( renderer.domElement );
 
 					window.addEventListener( 'resize', onWindowResize, false );
+									
+					initializeHUD();
 				}
-
+				
+				// builds the hud to its initial state
+				function initializeHUD() {
+				
+					ammo = [50, 0, 0, 0]
+					ammoIdx = armor = 0;
+					health = 100;
+					
+					updateHUD();
+				}
+				
 				function onWindowResize() {
 
 					camera.aspect = windowWidth / windowHeight;
@@ -464,12 +506,7 @@
 				
 				// used for debugging; when true, will log the xyz position of the actor to the console while moving
 				var REPORT_POSITION = false;
-				
-				var ammoIdx, health, armor, ammo;
-				ammoIdx = armor = ammo[1] = ammo[2] = ammo[3] = 0;
-				health = 100;
-				ammo[ammoIdx] = 50;
-				
+					
 				function animate() {
 
 					requestAnimationFrame( animate );
@@ -518,54 +555,82 @@
 							canJump = true;
 						}
 
+						lookAround(time);
+						
+						if(REPORT_POSITION) {
+					
+							var currX = controls.getObject().position.x.toFixed(4);
+							var currY = controls.getObject().position.y.toFixed(4);
+							var currZ = controls.getObject().position.z.toFixed(4);
+							
+							if(moveForward || moveBackward || moveLeft || moveRight || !canJump)	
+								console.log(currX + ", " + currY + ", " + currZ);
+						}
+						
 						prevTime = time;
 					}
 
 					renderer.render( scene, camera );
+				}
+
+				// contains the path to the Doom Guy Face textures, up to orientation and health-level; used in function lookAround() to simulate the wary gaze of the actor
+				var faceDivInnerHTML = "<img id=\"face_panel\" src=\"./src/textures/view/hud/faces/center/100.png\">";		
 					
-					if(REPORT_POSITION) {
-					
-						var currX = controls.getObject().position.x.toFixed(4);
-						var currY = controls.getObject().position.y.toFixed(4);
-						var currZ = controls.getObject().position.z.toFixed(4);
+				// the time in seconds of the last face swap
+				var timeOfLastLook = 0;
+				
+				function lookAround(time) {
+				
+					var doLookAround = Math.floor(Math.random() * 90);
+					if(doLookAround != 1 || (faceDivInnerHTML.includes("center") && time - timeOfLastLook < 0.75))
+						return;
+				
+					var healthLevel;
+					if(health > 80)
+						healthLevel = 100;
+					if(health <= 80 && health > 60)
+						healthLevel = 80;
+					if(health <= 60 && health > 40)
+						healthLevel = 60;
+					if(health <= 40 && health > 20)
+						healthLevel = 40;
+					if(health <= 20 && health > 0)
+						healthLevel = 20;
 						
-						if(moveForward || moveBackward || moveLeft || moveRight || !canJump)	
-							console.log(currX + ", " + currY + ", " + currZ);
-					}
+					console.log(faceDivInnerHTML.includes("center"));
+						
+					var faceDistributionFactor = 3;
+					if(!faceDivInnerHTML.includes("center"))
+						faceDistributionFactor = 5;
+					
+						
+					var peek = Math.floor(Math.random() * faceDistributionFactor);
+					if(peek == 0)
+						peek = "left";
+					else if(peek == 1)
+						peek = "right";
+					else 
+						peek = "center";
+						
+					faceDivInnerHTML = "<img id=\"face_panel\" src=\"./src/textures/view/hud/faces/" + peek + "/" + healthLevel + ".png\">";
+					
+					document.getElementById("faces").innerHTML = faceDivInnerHTML;
+					
+					timeOfLastLook = time;
+				}	
+					
+				function updateHUD() {
+				
+					document.getElementById("ammo").innerHTML = ammo[ammoIdx];
+					document.getElementById("health").innerHTML = health;
+					document.getElementById("armor").innerHTML = armor;
+					
+					document.getElementById("bull").innerHTML = ammo[0];
+					document.getElementById("shel").innerHTML = ammo[1];
+					document.getElementById("rckt").innerHTML = ammo[2];
+					document.getElementById("cell").innerHTML = ammo[3];
 				}
 			</script>
-			
-			<div id="hud">
-				<div id="ammo">
-					50
-				</div>
-				<div id="health">
-					100
-				</div>
-				<div id="arms">
-					<img id="arms_panel" src="./src/textures/view/hud/arms/2.png">
-				</div>
-				<div id="faces">
-					<img id="face_panel" src="./src/textures/view/hud/faces/center/100.png">
-				</div>
-				<div id="armor">
-					100
-				</div>
-				<div id="all_ammo">
-					<div id="bull" class="ammo_type">
-						50
-					</div>
-					<div id="shel" class="ammo_type">
-						0
-					</div>
-					<div id="rckt" class="ammo_type">
-						0
-					</div>
-					<div id="cell" class="ammo_type">
-						0
-					</div>					
-				</div>
-			</div>
 		</div>
 	</body>
 </html>
