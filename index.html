@@ -31,11 +31,31 @@
 			
 			#blocker {
 				position: absolute;
+				z-index: 1;
 			
 				width: 800px;
 				height: 600px;
 
 				background-color: rgba(0,0,0,0.5);
+			}
+			
+			#view_model {
+				position: absolute;
+
+				margin-top: -304px;
+				margin-left: 250px;
+			}
+			
+			#pump_animation {
+				position: absolute;
+				
+				margin-top: -304px;
+				margin-left: 50px;				
+			}
+			
+			#fps {
+				width: 300px;
+				height: 300px;
 			}
 			
 			#hud {
@@ -180,6 +200,12 @@
 			<div id="game_canvas">
 				<!--The game canvas is placed here after the script executes; do not remove!-->
 			</div>
+			<div id="view_model">
+				<img id="fps" src="./src/textures/view/weapons/pistol/0_idle.png">
+			</div>
+			<div id="pump_animation">
+				<!--The pump-action animation of the shotgun appears in this div, which is offset further to the left of the screen as compared to the other animations!-->
+			</div>
 			<div id="hud">
 				<div id="ammo">
 					0
@@ -281,7 +307,7 @@
 				var windowHeight = 498;
 				
 				// HUD elements
-				var ammoIdx, health, armor, ammo;
+				var ammoIdx, health, activeWeapon, armor, ammo;
 				
 				init();
 				animate();
@@ -293,6 +319,9 @@
 				var moveLeft = false;
 				var moveRight = false;
 				var canJump = false;
+				
+				var weaponFired = false;
+				var canSwitchWeapon = true;
 
 				var prevTime = performance.now();
 				var velocity = new THREE.Vector3();
@@ -322,6 +351,13 @@
 					
 					scene.add( controls.getObject() );
 
+					var onMouseDown = function ( event ) {
+						if(controlsEnabled === false || ammo[ammoIdx] == 0)
+							return;
+						weaponFired = true;
+						canSwitchWeapon = false;
+					}
+					
 					var onKeyDown = function ( event ) {
 
 						switch ( event.keyCode ) {
@@ -347,7 +383,15 @@
 
 							case 32: // space
 								if ( canJump === true ) velocity.y += 350;
-								canJump = false;
+								canJump = false; 
+								break;
+								
+							case 50: // 2; switch to pistol
+								switchWeapon(2);
+								break;
+								
+							case 51: // 3; switch to shotgun
+								switchWeapon(3);
 								break;
 						}
 					};
@@ -378,6 +422,7 @@
 						}
 					};
 
+					document.addEventListener( 'mousedown', onMouseDown, false );
 					document.addEventListener( 'keydown', onKeyDown, false );
 					document.addEventListener( 'keyup', onKeyUp, false );
 
@@ -417,9 +462,10 @@
 				// builds the hud to its initial state
 				function initializeHUD() {
 				
-					ammo = [50, 0, 0, 0]
+					ammo = [50, 20, 0, 0]
 					ammoIdx = armor = 0;
 					health = 100;
+					activeWeapon = 2;
 					
 					updateHUD();
 				}
@@ -555,6 +601,8 @@
 							canJump = true;
 						}
 
+						if(weaponFired)
+							fireWeapon(time);
 						lookAround(time);
 						
 						if(REPORT_POSITION) {
@@ -573,12 +621,112 @@
 					renderer.render( scene, camera );
 				}
 
+				function switchWeapon(weaponID) {
+					if(!canSwitchWeapon)
+						return;
+						
+					activeWeapon = weaponID;
+					
+					switch(weaponID) {
+						case 2:
+							ammoIdx = 0;
+							document.getElementById("view_model").innerHTML = "<img id=\"fps\" src=\"./src/textures/view/weapons/pistol/0_idle.png\">";
+							document.getElementById("arms").innerHTML = "<img id=\"arms_panel\" src=\"./src/textures/view/hud/arms/2.png\">";
+							break;
+						case 3:
+							ammoIdx = 1;
+							document.getElementById("view_model").innerHTML = "<img id=\"fps\" src=\"./src/textures/view/weapons/shotgun/0_idle.png\">";
+							document.getElementById("arms").innerHTML = "<img id=\"arms_panel\" src=\"./src/textures/view/hud/arms/3.png\">";
+							break;
+					}
+					
+					updateHUD();
+				}
+				
+				// contains the path to the first-person view textures for weapons; used in fucntion fireWeapon() to cycle through the firing animations of Doom Guy's weapons
+				var fpsDivInnerHTML = "<img id=\"fps\" src=\"./src/textures/view/weapons/pistol/0_idle.png\">";
+				
+				// the time in seconds of the last firing animation cycle
+				var weaponCycleTime = 0;
+				function fireWeapon(time) {
+					if(activeWeapon == 2)
+						firePistol(time);
+					else if(activeWeapon == 3)
+						fireShotgun(time);
+				}
+				
+				function firePistol(time) {
+					if(time - weaponCycleTime < 80)
+						return;
+							
+					var animationPath = "<img id=\"fps\" src=\"./src/textures/view/weapons/pistol/";
+					
+					if(fpsDivInnerHTML.includes("0")) {
+						animationPath += "1_fired.png\">";
+						ammo[ammoIdx]--;
+						updateHUD();
+					}
+					else if(fpsDivInnerHTML.includes("1"))
+						animationPath += "2_blowback.png\">";
+					else if(fpsDivInnerHTML.includes("2"))
+						animationPath += "3_chambered.png\">";
+					else if(fpsDivInnerHTML.includes("3")) {
+						animationPath += "0_idle.png\">";
+						weaponFired = false;
+						canSwitchWeapon = true;
+					}
+						
+					console.log(animationPath);
+						
+					fpsDivInnerHTML = animationPath;
+					document.getElementById("view_model").innerHTML = fpsDivInnerHTML;
+					
+					weaponCycleTime = time;
+				}
+				
+				function fireShotgun(time) {
+					if(time - weaponCycleTime < 130)
+						return;
+							
+					var animationPath = "<img id=\"fps\" src=\"./src/textures/view/weapons/shotgun/";
+					
+					if(fpsDivInnerHTML.includes("0")) {
+						animationPath += "1_fired.png\">";
+						ammo[ammoIdx]--;
+						updateHUD();
+					}
+					else if(fpsDivInnerHTML.includes("1"))
+						animationPath += "2_pump.png\">";
+					else if(fpsDivInnerHTML.includes("2"))
+						animationPath += "3_pump_in.png\">";
+					else if(fpsDivInnerHTML.includes("3"))
+						animationPath += "4_pump_out.png\">";
+					else if(fpsDivInnerHTML.includes("4")) {
+						animationPath += "0_idle.png\">";
+						weaponFired = false;
+						canSwitchWeapon = true;
+					}
+											
+					fpsDivInnerHTML = animationPath;
+					
+					// pump animations are further to the left of the screen for realism
+					if(animationPath.includes("pump")) {
+						document.getElementById("pump_animation").innerHTML = fpsDivInnerHTML;
+						document.getElementById("view_model").innerHTML = "";
+					}
+					else {
+						document.getElementById("pump_animation").innerHTML = "";
+						document.getElementById("view_model").innerHTML = fpsDivInnerHTML;
+					}
+					
+					weaponCycleTime = time;
+				}
+				
 				// contains the path to the Doom Guy Face textures, up to orientation and health-level; used in function lookAround() to simulate the wary gaze of the actor
 				var faceDivInnerHTML = "<img id=\"face_panel\" src=\"./src/textures/view/hud/faces/center/100.png\">";		
 					
 				// the time in seconds of the last face swap
-				var timeOfLastLook = 0;
-				
+				var timeOfLastLook = 0;	
 				function lookAround(time) {
 				
 					var doLookAround = Math.floor(Math.random() * 90);
@@ -596,9 +744,7 @@
 						healthLevel = 40;
 					if(health <= 20 && health > 0)
 						healthLevel = 20;
-						
-					console.log(faceDivInnerHTML.includes("center"));
-						
+											
 					var faceDistributionFactor = 3;
 					if(!faceDivInnerHTML.includes("center"))
 						faceDistributionFactor = 5;
