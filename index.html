@@ -398,6 +398,7 @@
 						mesh.castShadow = true;
 						mesh.receiveShadow = true;
 						mesh.name = "map";
+						objects.push(mesh);
 						scene.add( mesh );
 
 					} );
@@ -432,81 +433,83 @@
 					renderer.setSize( windowWidth , windowHeight );
 				}
 				
-				var applyPhysics = (function() {
-					var timeStep = 5;
-					var timeLeft = timeStep + 1;
+				// var applyPhysics = (function() {
+				// 	var timeStep = 5;
+				// 	var timeLeft = timeStep + 1;
 
-					var birdsEye = 100;
-					var kneeDeep = 0.4;
+				// 	var birdsEye = 100;
+				// 	var kneeDeep = 0.4;
 
-					var raycaster = new THREE.Raycaster();
-					raycaster.ray.direction.set( 0, -1, 0 );
+				// 	var raycaster = new THREE.Raycaster();
+				// 	raycaster.ray.direction.set( 0, -1, 0 );
 
-					var angles = new THREE.Vector2();
-					var displacement = new THREE.Vector3();
+				// 	var angles = new THREE.Vector2();
+				// 	var displacement = new THREE.Vector3();
 
-					return function( dt ) {
-						var platform = scene.getObjectByName( "map", true );
-						if( platform ) {
+				// 	return function( dt ) {
+				// 		var platform = scene.getObjectByName( "map", true );
+				// 		if( platform ) {
 
-							timeLeft += dt;
+				// 			timeLeft += dt;
 
-							// run several fixed-step iterations to approximate varying-step
+				// 			// run several fixed-step iterations to approximate varying-step
 
-							dt = 5;
-							while( timeLeft >= dt ) {
+				// 			dt = 5;
+				// 			while( timeLeft >= dt ) {
 
-								var time = 0.3, damping = 0.93, gravity = 0.01, tau = 2 * Math.PI;
+				// 				var time = 0.3, damping = 0.93, gravity = 0.01, tau = 2 * Math.PI;
 
-								raycaster.ray.origin.copy( motion.position );
-								raycaster.ray.origin.y += birdsEye;
+				// 				raycaster.ray.origin.copy( motion.position );
+				// 				raycaster.ray.origin.y += birdsEye;
 
-								var hits = raycaster.intersectObject( platform );
+				// 				var hits = raycaster.intersectObject( platform );
 
-								motion.airborne = true;
+				// 				motion.airborne = true;
 
-								// are we above, or at most knee deep in, the platform?
+				// 				// are we above, or at most knee deep in, the platform?
 
-								if( ( hits.length > 0 ) && ( hits[0].face.normal.y > 0 ) ) {
-									var actualHeight = hits[0].distance - birdsEye;
+				// 				if( ( hits.length > 0 ) && ( hits[0].face.normal.y > 0 ) ) {
+				// 					var actualHeight = hits[0].distance - birdsEye;
 
-									// collision: stick to the surface if landing on it
+				// 					// collision: stick to the surface if landing on it
 
-									if( ( motion.velocity.y <= 0 ) && ( Math.abs( actualHeight ) < kneeDeep ) ) {
-										motion.position.y -= actualHeight;
-										motion.velocity.y = 0;
-										motion.airborne = false;
-									}
-								}
+				// 					if( ( motion.velocity.y <= 0 ) && ( Math.abs( actualHeight ) < kneeDeep ) ) {
+				// 						motion.position.y -= actualHeight;
+				// 						motion.velocity.y = 0;
+				// 						motion.airborne = false;
+				// 					}
+				// 				}
 
-								if( motion.airborne ) motion.velocity.y -= gravity;
+				// 				if( motion.airborne ) motion.velocity.y -= gravity;
 
-								angles.copy( motion.spinning ).multiplyScalar( time );
-								if( !motion.airborne ) motion.spinning.multiplyScalar( damping );
+				// 				angles.copy( motion.spinning ).multiplyScalar( time );
+				// 				if( !motion.airborne ) motion.spinning.multiplyScalar( damping );
 
-								displacement.copy( motion.velocity ).multiplyScalar( time );
-								if( !motion.airborne ) motion.velocity.multiplyScalar( damping );
+				// 				displacement.copy( motion.velocity ).multiplyScalar( time );
+				// 				if( !motion.airborne ) motion.velocity.multiplyScalar( damping );
 
-								motion.rotation.add( angles );
-								motion.position.add( displacement );
+				// 				motion.rotation.add( angles );
+				// 				motion.position.add( displacement );
 
-								// limit the tilt at ±0.4 radians
+				// 				// limit the tilt at ±0.4 radians
 
-								motion.rotation.x = Math.max( -0.4, Math.min ( +0.4, motion.rotation.x ) );
+				// 				motion.rotation.x = Math.max( -0.4, Math.min ( +0.4, motion.rotation.x ) );
 
-								// wrap horizontal rotation to 0...2π
+				// 				// wrap horizontal rotation to 0...2π
 
-								motion.rotation.y += tau; motion.rotation.y %= tau;
+				// 				motion.rotation.y += tau; motion.rotation.y %= tau;
 
-								timeLeft -= dt;
-							}
-						}
-					};
-				})();
+				// 				timeLeft -= dt;
+				// 			}
+				// 		}
+				// 	};
+				// })();
 				
 				// used for debugging; when true, will log the xyz position of the actor to the console while moving
 				var REPORT_POSITION = false;
-					
+				var gameloop = function( dt ){
+					applyPhysics(dt);
+				}
 				function animate() {
 
 					requestAnimationFrame( animate );
@@ -515,7 +518,6 @@
 
 						raycaster.ray.origin.copy( controls.getObject().position );
 						raycaster.ray.origin.y -= 10;
-
 						var intersections = raycaster.intersectObjects( objects );
 
 						var onObject = intersections.length > 0;
@@ -597,7 +599,7 @@
 					if(health <= 20 && health > 0)
 						healthLevel = 20;
 						
-					console.log(faceDivInnerHTML.includes("center"));
+					//console.log(faceDivInnerHTML.includes("center"));
 						
 					var faceDistributionFactor = 3;
 					if(!faceDivInnerHTML.includes("center"))
