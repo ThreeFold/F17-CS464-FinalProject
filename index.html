@@ -170,15 +170,28 @@
 					scene = new THREE.Scene();
 					scene.background = new THREE.Color( 0xffffff );
 
-					// var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
-					// light.position.set( 0.5, 1, 0.75 );
-					// scene.add( light );
+					// general light
+					var light = new THREE.HemisphereLight(0xbf5454, 0xa39696, 0.85);
+					light.position.set( 0.5, 1, 0.75 );
+					scene.add( light );
 					
-					var light = new THREE.PointLight(0xffffff,.90,100);
+					// light over the spawn point
+					var light = new THREE.PointLight(0x197509, 0.55, 100);
 					light.position.set(0,23,0);
 					scene.add(light);
 					
-					var hallLight = new THREE.PointLight(0xffffff,.25,100);
+					// light over the medkits
+					var light = new THREE.PointLight(0xc9c7c7, 0.1, 100);
+					light.position.set(111,23,0);
+					scene.add(light);
+					
+					// light over the ammo/shotgun
+					var light = new THREE.PointLight(0xc9c7c7, 0.1, 100);
+					light.position.set(31,23,75);
+					scene.add(light);
+					
+					// light over the enemy
+					var hallLight = new THREE.PointLight(0xc40909, 0.25, 100);
 					hallLight.position.set(25,23,-100);
 					scene.add(hallLight);
 					
@@ -274,7 +287,8 @@
 					//Load stl map
 					var loader = new THREE.OBJLoader();
 					
-					var texture = new THREE.TextureLoader().load('./materials/textures/hex_tile_filthy.png')
+					var texture = new THREE.TextureLoader().load('./materials/textures/brick_clean.png');
+					
 					var material = new THREE.MeshStandardMaterial( { color: 0xAAAAAA, specular: 0x111111, shininess: 200 } );
 					
 					loader.load('materials/models/Working.obj', function (object){
@@ -427,7 +441,7 @@
 				
 					weaponsCollected = [2];
 				
-					ammo = [50, 0, 0, 0]
+					ammo = [0, 0, 0, 0]
 					ammoIdx = armor = 0;
 					health = 25;
 					activeWeapon = 2;
@@ -450,10 +464,7 @@
 						//console.log(enemy.plane.rotation);
 					}
 				}
-				
-				// used for debugging; when true, will log the xyz position of the actor to the console while moving
-				var REPORT_POSITION = false;
-				
+								
 				var debug = false;
 				var fireDirection = new THREE.Vector3();
 				var lineOfSight =new THREE.Raycaster( new THREE.Vector3(), camera.getWorldDirection(), 0, 100 );
@@ -583,19 +594,10 @@
 							var currY = controls.getObject().position.y.toFixed(4);
 							var currZ = controls.getObject().position.z.toFixed(4);
 							debugString += "<br/>" + currX + ", " + currY + ", " + currZ;
-						}
+							debugOut.innerHTML = debugString;
+						} 
 						
-						debugOut.innerHTML = debugString;
-						
-						if(REPORT_POSITION) {
-					
-							var currX = controls.getObject().position.x.toFixed(4);
-							var currY = controls.getObject().position.y.toFixed(4);
-							var currZ = controls.getObject().position.z.toFixed(4);
-							
-							if(moveForward || moveBackward || moveLeft || moveRight || !canJump)	
-								console.log(currX + ", " + currY + ", " + currZ);
-						}
+
 						
 						prevTime = time;
 					}
@@ -614,9 +616,9 @@
 					var message = "";
 					
 					for(item of items) {
-						if(item.x < currX + 10 && item.x > currX - 10 &&
+						if(item.x < currX + 7 && item.x > currX - 7 &&
 						   item.y < currY + 10 && item.y > currY - 10 &&
-						   item.z < currZ + 10 && item.z > currZ - 10) {
+						   item.z < currZ + 7 && item.z > currZ - 7) {
 							if(item.itemID.includes("weapon")) {
 								if(item.itemID.includes("shotgun")) {
 									weaponsCollected.push(3);
