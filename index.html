@@ -4,12 +4,12 @@
 		<title>Apker/McNew - CS464 Final</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	
+
 		<link rel="stylesheet" type="text/css" media="screen" href="./style.css"/>
-	
+
 		<script src="js/three.js"></script>
 		<script src="js/PointerLockControls.js"></script>
-		<script src="js/STLLoader.js"></script>
+		<script src="js/OBJLoader.js"></script>
 		<script src="js/Detector.js"></script>
 		<script src="js/stats.min.js"></script>
 	</head>
@@ -21,7 +21,7 @@
 						<img id="doom" src="./src/textures/banner/dumb.png">
 					</div>
 					<br/>
-					W, A, S, D = Move, SPACE = Jump, MOUSE = Aim 
+					W, A, S, D = Move, SPACE = Jump, MOUSE = Aim
 					<br/>
 					CLICK = Shoot, NUMBER KEYS = Switch weapon
 				</div>
@@ -63,10 +63,13 @@
 					</div>
 					<div id="cell" class="ammo_type">
 						0
-					</div>					
+					</div>
 				</div>
 			</div>
-			
+
+            <div id="debug"  style="height:20px;">
+                False
+            </div>
 			<script>
 				var camera, scene, renderer, controls;
 
@@ -134,10 +137,10 @@
 
 				var windowWidth = 800;
 				var windowHeight = 498;
-				
+
 				// HUD elements
 				var ammoIdx, health, activeWeapon, armor, ammo;
-				
+
 				init();
 				animate();
 
@@ -148,14 +151,14 @@
 				var moveLeft = false;
 				var moveRight = false;
 				var canJump = false;
-				
+
 				var weaponFired = false;
 				var canSwitchWeapon = true;
 
 				var prevTime = performance.now();
 				var velocity = new THREE.Vector3();
 				var direction = new THREE.Vector3();
-				
+
 				function init() {
 
 					camera = new THREE.PerspectiveCamera( 75, windowWidth / windowHeight, 1, 1000 );
@@ -167,17 +170,20 @@
 					var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
 					light.position.set( 0.5, 1, 0.75 );
 					scene.add( light );
+					var dirLight = new THREE.PointLight(0xffffff,1,100);
+                    dirLight.position.set(0,10,0);
+					scene.add(dirLight);
 
 					controls = new THREE.PointerLockControls( camera );
-					
+
 					// rotate camera to view starting door
-					controls.getObject().rotation.y = -90*Math.PI/180;
-					
+					controls.getObject().rotation.y = 90*Math.PI/180;
+
 					// starting room coordinate position
-					controls.getObject().position.x = -140;
-					controls.getObject().position.y = 10;
-					controls.getObject().position.z = 604;
-					
+					controls.getObject().position.x = 0;
+					controls.getObject().position.y = 0;
+					controls.getObject().position.z = 0;
+
 					scene.add( controls.getObject() );
 
 					var onMouseDown = function ( event ) {
@@ -186,7 +192,7 @@
 						weaponFired = true;
 						canSwitchWeapon = false;
 					}
-					
+
 					var onKeyDown = function ( event ) {
 
 						switch ( event.keyCode ) {
@@ -212,13 +218,13 @@
 
 							case 32: // space
 								if ( canJump === true ) velocity.y += 350;
-								canJump = false; 
+								canJump = false;
 								break;
-								
+
 							case 50: // 2; switch to pistol
 								switchWeapon(2);
 								break;
-								
+
 							case 51: // 3; switch to shotgun
 								switchWeapon(3);
 								break;
@@ -258,16 +264,18 @@
 					raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
 
 					//Load stl map
-					var loader = new THREE.STLLoader();
+					var loader = new THREE.OBJLoader();
 
-					var material = new THREE.MeshPhongMaterial( { color: 0xAAAAAA, specular: 0x111111, shininess: 200 } );
-					loader.load( 'src/models/e1m1_map.stl', function ( geometry ) {
+                    var texture = new
+                        THREE.TextureLoader().load('src/textures/map/brick_filthy.png');
+                    var material = new THREE.MeshStandardMaterial({map: texture});
 
+					loader.load( 'src/models/Working.obj', function ( geometry ) {
 						var mesh = new THREE.Mesh( geometry, material );
 
-						mesh.position.set( 0, 0, 0  );
+						mesh.position.set( 0, -1, 0  );
 						mesh.rotation.set( - Math.PI / 2, 0, 0 );
-						mesh.scale.set(0.4, 0.4 , 0.4);
+						mesh.scale.set(1,1,1);
 
 						mesh.castShadow = true;
 						mesh.receiveShadow = true;
@@ -276,30 +284,30 @@
 						scene.add( mesh );
 
 					} );
-					
+
 					renderer = new THREE.WebGLRenderer();
 					renderer.setPixelRatio( window.devicePixelRatio );
 					renderer.setSize( windowWidth , windowHeight );
-					
+
 					var gameWindow = document.getElementById( "game_canvas" );
 					gameWindow.appendChild( renderer.domElement );
 
 					window.addEventListener( 'resize', onWindowResize, false );
-									
+
 					initializeHUD();
 				}
-				
+
 				// builds the hud to its initial state
 				function initializeHUD() {
-				
+
 					ammo = [50, 20, 0, 0]
 					ammoIdx = armor = 0;
 					health = 100;
 					activeWeapon = 2;
-					
+
 					updateHUD();
 				}
-				
+
 				function onWindowResize() {
 
 					camera.aspect = windowWidth / windowHeight;
@@ -307,84 +315,9 @@
 
 					renderer.setSize( windowWidth , windowHeight );
 				}
-				
-				// var applyPhysics = (function() {
-				// 	var timeStep = 5;
-				// 	var timeLeft = timeStep + 1;
 
-				// 	var birdsEye = 100;
-				// 	var kneeDeep = 0.4;
-
-				// 	var raycaster = new THREE.Raycaster();
-				// 	raycaster.ray.direction.set( 0, -1, 0 );
-
-				// 	var angles = new THREE.Vector2();
-				// 	var displacement = new THREE.Vector3();
-
-				// 	return function( dt ) {
-				// 		var platform = scene.getObjectByName( "map", true );
-				// 		if( platform ) {
-
-				// 			timeLeft += dt;
-
-				// 			// run several fixed-step iterations to approximate varying-step
-
-				// 			dt = 5;
-				// 			while( timeLeft >= dt ) {
-
-				// 				var time = 0.3, damping = 0.93, gravity = 0.01, tau = 2 * Math.PI;
-
-				// 				raycaster.ray.origin.copy( motion.position );
-				// 				raycaster.ray.origin.y += birdsEye;
-
-				// 				var hits = raycaster.intersectObject( platform );
-
-				// 				motion.airborne = true;
-
-				// 				// are we above, or at most knee deep in, the platform?
-
-				// 				if( ( hits.length > 0 ) && ( hits[0].face.normal.y > 0 ) ) {
-				// 					var actualHeight = hits[0].distance - birdsEye;
-
-				// 					// collision: stick to the surface if landing on it
-
-				// 					if( ( motion.velocity.y <= 0 ) && ( Math.abs( actualHeight ) < kneeDeep ) ) {
-				// 						motion.position.y -= actualHeight;
-				// 						motion.velocity.y = 0;
-				// 						motion.airborne = false;
-				// 					}
-				// 				}
-
-				// 				if( motion.airborne ) motion.velocity.y -= gravity;
-
-				// 				angles.copy( motion.spinning ).multiplyScalar( time );
-				// 				if( !motion.airborne ) motion.spinning.multiplyScalar( damping );
-
-				// 				displacement.copy( motion.velocity ).multiplyScalar( time );
-				// 				if( !motion.airborne ) motion.velocity.multiplyScalar( damping );
-
-				// 				motion.rotation.add( angles );
-				// 				motion.position.add( displacement );
-
-				// 				// limit the tilt at ±0.4 radians
-
-				// 				motion.rotation.x = Math.max( -0.4, Math.min ( +0.4, motion.rotation.x ) );
-
-				// 				// wrap horizontal rotation to 0...2π
-
-				// 				motion.rotation.y += tau; motion.rotation.y %= tau;
-
-				// 				timeLeft -= dt;
-				// 			}
-				// 		}
-				// 	};
-				// })();
-				
 				// used for debugging; when true, will log the xyz position of the actor to the console while moving
 				var REPORT_POSITION = false;
-				var gameloop = function( dt ){
-					applyPhysics(dt);
-				}
 				function animate() {
 
 					requestAnimationFrame( animate );
@@ -392,13 +325,18 @@
 					if ( controlsEnabled === true ) {
 
 						raycaster.ray.origin.copy( controls.getObject().position );
+                        raycaster.ray.direction.normalize();
 						raycaster.ray.origin.y -= 10;
 						var intersections = raycaster.intersectObjects( objects );
 
 						var onObject = intersections.length > 0;
-
+                        var debugOut = document.getElementById("debug");
+                        debugOut.innerHTML = controls.getObject().position.x +
+                            "<br/>" +  controls.getObject().position.z + "<br/>"
+                            + onObject.toString();
 						var time = performance.now();
 						var delta = ( time - prevTime ) / 1000;
+
 
 						velocity.x -= velocity.x * 10.0 * delta;
 						velocity.z -= velocity.z * 10.0 * delta;
@@ -409,22 +347,23 @@
 						direction.x = Number( moveLeft ) - Number( moveRight );
 						direction.normalize(); // this ensures consistent movements in all directions
 
-						if ( moveForward || moveBackward ) 
-							velocity.z -= direction.z * 400.0 * delta;
-						if ( moveLeft || moveRight ) 
-							velocity.x -= direction.x * 400.0 * delta;
 
+						if ( (moveForward || moveBackward) )
+							velocity.z -= direction.z * 400.0 * delta;
+						if ( (moveLeft || moveRight))
+							velocity.x -= direction.x * 400.0 * delta;
 						if ( onObject === true ) {
-						
 							velocity.y = Math.max( 0, velocity.y );
 							canJump = true;
 						}
 
+
+
 						controls.getObject().translateX( velocity.x * delta );
 						controls.getObject().translateY( velocity.y * delta );
-						controls.getObject().translateZ( velocity.z * delta );	
-						
-						if ( controls.getObject().position.y < 10 ) {
+						controls.getObject().translateZ( velocity.z * delta );
+
+						if ( controls.getObject().position.y < -100 ) {
 
 							velocity.y = 0;
 							//height of polygon below position
@@ -435,17 +374,17 @@
 						if(weaponFired)
 							fireWeapon(time);
 						lookAround(time);
-						
+
 						if(REPORT_POSITION) {
-					
+
 							var currX = controls.getObject().position.x.toFixed(4);
 							var currY = controls.getObject().position.y.toFixed(4);
 							var currZ = controls.getObject().position.z.toFixed(4);
-							
-							if(moveForward || moveBackward || moveLeft || moveRight || !canJump)	
+
+							if(moveForward || moveBackward || moveLeft || moveRight || !canJump)
 								console.log(currX + ", " + currY + ", " + currZ);
 						}
-						
+
 						prevTime = time;
 					}
 
@@ -455,9 +394,9 @@
 				function switchWeapon(weaponID) {
 					if(!canSwitchWeapon)
 						return;
-						
+
 					activeWeapon = weaponID;
-					
+
 					switch(weaponID) {
 						case 2:
 							ammoIdx = 0;
@@ -470,13 +409,13 @@
 							document.getElementById("arms").innerHTML = "<img id=\"arms_panel\" src=\"./src/textures/view/hud/arms/3.png\">";
 							break;
 					}
-					
+
 					updateHUD();
 				}
-				
+
 				// contains the path to the first-person view textures for weapons; used in fucntion fireWeapon() to cycle through the firing animations of Doom Guy's weapons
 				var fpsDivInnerHTML = "<img id=\"fps\" src=\"./src/textures/view/weapons/pistol/0_idle.png\">";
-				
+
 				// the time in seconds of the last firing animation cycle
 				var weaponCycleTime = 0;
 				function fireWeapon(time) {
@@ -485,13 +424,13 @@
 					else if(activeWeapon == 3)
 						fireShotgun(time);
 				}
-				
+
 				function firePistol(time) {
 					if(time - weaponCycleTime < 80)
 						return;
-							
+
 					var animationPath = "<img id=\"fps\" src=\"./src/textures/view/weapons/pistol/";
-					
+
 					if(fpsDivInnerHTML.includes("0")) {
 						animationPath += "1_fired.png\">";
 						ammo[ammoIdx]--;
@@ -506,21 +445,21 @@
 						weaponFired = false;
 						canSwitchWeapon = true;
 					}
-						
+
 					console.log(animationPath);
-						
+
 					fpsDivInnerHTML = animationPath;
 					document.getElementById("view_model").innerHTML = fpsDivInnerHTML;
-					
+
 					weaponCycleTime = time;
 				}
-				
+
 				function fireShotgun(time) {
 					if(time - weaponCycleTime < 130)
 						return;
-							
+
 					var animationPath = "<img id=\"fps\" src=\"./src/textures/view/weapons/shotgun/";
-					
+
 					if(fpsDivInnerHTML.includes("0")) {
 						animationPath += "1_fired.png\">";
 						ammo[ammoIdx]--;
@@ -537,9 +476,9 @@
 						weaponFired = false;
 						canSwitchWeapon = true;
 					}
-											
+
 					fpsDivInnerHTML = animationPath;
-					
+
 					// pump animations are further to the left of the screen for realism
 					if(animationPath.includes("pump")) {
 						document.getElementById("pump_animation").innerHTML = fpsDivInnerHTML;
@@ -549,21 +488,21 @@
 						document.getElementById("pump_animation").innerHTML = "";
 						document.getElementById("view_model").innerHTML = fpsDivInnerHTML;
 					}
-					
+
 					weaponCycleTime = time;
 				}
-				
+
 				// contains the path to the Doom Guy Face textures, up to orientation and health-level; used in function lookAround() to simulate the wary gaze of the actor
-				var faceDivInnerHTML = "<img id=\"face_panel\" src=\"./src/textures/view/hud/faces/center/100.png\">";		
-					
+				var faceDivInnerHTML = "<img id=\"face_panel\" src=\"./src/textures/view/hud/faces/center/100.png\">";
+
 				// the time in seconds of the last face swap
-				var timeOfLastLook = 0;	
+				var timeOfLastLook = 0;
 				function lookAround(time) {
-				
+
 					var doLookAround = Math.floor(Math.random() * 90);
 					if(doLookAround != 1 || (faceDivInnerHTML.includes("center") && time - timeOfLastLook < 0.75))
 						return;
-				
+
 					var healthLevel;
 					if(health > 80)
 						healthLevel = 100;
@@ -575,33 +514,33 @@
 						healthLevel = 40;
 					if(health <= 20 && health > 0)
 						healthLevel = 20;
-											
+
 					var faceDistributionFactor = 3;
 					if(!faceDivInnerHTML.includes("center"))
 						faceDistributionFactor = 5;
-					
-						
+
+
 					var peek = Math.floor(Math.random() * faceDistributionFactor);
 					if(peek == 0)
 						peek = "left";
 					else if(peek == 1)
 						peek = "right";
-					else 
+					else
 						peek = "center";
-						
+
 					faceDivInnerHTML = "<img id=\"face_panel\" src=\"./src/textures/view/hud/faces/" + peek + "/" + healthLevel + ".png\">";
-					
+
 					document.getElementById("faces").innerHTML = faceDivInnerHTML;
-					
+
 					timeOfLastLook = time;
-				}	
-					
+				}
+
 				function updateHUD() {
-				
+
 					document.getElementById("ammo").innerHTML = ammo[ammoIdx];
 					document.getElementById("health").innerHTML = health;
 					document.getElementById("armor").innerHTML = armor;
-					
+
 					document.getElementById("bull").innerHTML = ammo[0];
 					document.getElementById("shel").innerHTML = ammo[1];
 					document.getElementById("rckt").innerHTML = ammo[2];
