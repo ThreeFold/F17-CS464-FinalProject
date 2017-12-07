@@ -7,30 +7,34 @@
 	
 		<link rel="stylesheet" type="text/css" media="screen" href="./style.css"/>
 	
-		<script src="js/three.js"></script>
-		<script src="js/PointerLockControls.js"></script>
-		<script src="js/STLLoader.js"></script>
-		<script src="js/Detector.js"></script>
-		<script src="js/stats.min.js"></script>
+		<script src="./build/three.js"></script>
+		<script src="./src/js/controls/PointerLockControls.js"></script>
+		<script src="./src/js/loaders/STLLoader.js"></script>
+		<script src="./src/js/loaders/DDSLoader.js"></script>
+		<script src="./src/js/loaders/MTLLoader.js"></script>
+		<script src="./src/js/loaders/OBJLoader.js"></script>
 	</head>
 	<body>
 		<div id="game_window">
 			<div id="blocker">
 				<div id="instructions">
 					<div id="banner">
-						<img id="doom" src="./src/textures/banner/dumb.png">
+						<img id="doom" src="./materials/textures/banner/dumb.png">
 					</div>
 					<br/>
-					W, A, S, D = Move, SPACE = Jump, MOUSE = Aim 
+					W, A, S, D = Move, MOUSE = Aim 
 					<br/>
 					CLICK = Shoot, NUMBER KEYS = Switch weapon
 				</div>
 			</div>
 			<div id="game_canvas">
-				<!--The game canvas is placed here after the script executes; do not remove!-->
+				<div id="messages">
+				</div>
+				
+				<!--The game canvas is placed here after the script executes-->
 			</div>
 			<div id="view_model">
-				<img id="fps" src="./src/textures/view/weapons/pistol/0_idle.png">
+				<img id="fps" src="./materials/textures/view/weapons/pistol/0_idle.png">
 			</div>
 			<div id="pump_animation">
 				<!--The pump-action animation of the shotgun appears in this div, which is offset further to the left of the screen as compared to the other animations!-->
@@ -43,10 +47,10 @@
 					0
 				</div>
 				<div id="arms">
-					<img id="arms_panel" src="./src/textures/view/hud/arms/2.png">
+					<img id="arms_panel" src="./materials/textures/view/hud/arms/2.png">
 				</div>
 				<div id="faces">
-					<img id="face_panel" src="./src/textures/view/hud/faces/center/100.png">
+					<img id="face_panel" src="./materials/textures/view/hud/faces/center/100.png">
 				</div>
 				<div id="armor">
 					0
@@ -66,12 +70,15 @@
 					</div>					
 				</div>
 			</div>
-			
+			<div id="debug">
+			</div>	
 			<script>
 				var camera, scene, renderer, controls;
 
 				var objects = [];
-
+				var enemies = [];
+				var raycaster;
+				var debugOut = document.getElementById('debug');
 				var raycaster;
 
 				var blocker = document.getElementById( 'blocker' );
@@ -136,7 +143,7 @@
 				var windowHeight = 498;
 				
 				// HUD elements
-				var ammoIdx, health, activeWeapon, armor, ammo;
+				var ammoIdx, health, activeWeapon, armor, ammo, weaponsCollected;
 				
 				init();
 				animate();
@@ -162,21 +169,28 @@
 
 					scene = new THREE.Scene();
 					scene.background = new THREE.Color( 0xffffff );
-					scene.fog = new THREE.Fog( 0xffffff, 0, 750 );
 
-					var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
-					light.position.set( 0.5, 1, 0.75 );
-					scene.add( light );
-
+					// var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
+					// light.position.set( 0.5, 1, 0.75 );
+					// scene.add( light );
+					
+					var light = new THREE.PointLight(0xffffff,.90,100);
+					light.position.set(0,23,0);
+					scene.add(light);
+					
+					var hallLight = new THREE.PointLight(0xffffff,.25,100);
+					hallLight.position.set(25,23,-100);
+					scene.add(hallLight);
+					
 					controls = new THREE.PointerLockControls( camera );
 					
 					// rotate camera to view starting door
 					controls.getObject().rotation.y = -90*Math.PI/180;
 					
 					// starting room coordinate position
-					controls.getObject().position.x = -140;
-					controls.getObject().position.y = 10;
-					controls.getObject().position.z = 604;
+					controls.getObject().position.x = 0;
+					controls.getObject().position.y = 0;
+					controls.getObject().position.z = 0;
 					
 					scene.add( controls.getObject() );
 
@@ -211,7 +225,7 @@
 								break;
 
 							case 32: // space
-								if ( canJump === true ) velocity.y += 350;
+								if ( canJump === true ) ;//velocity.y += 350;
 								canJump = false; 
 								break;
 								
@@ -256,26 +270,25 @@
 					document.addEventListener( 'keyup', onKeyUp, false );
 
 					raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
-
+					addEnemy(new THREE.Vector3(30,0,-96),20);
 					//Load stl map
-					var loader = new THREE.STLLoader();
-
-					var material = new THREE.MeshPhongMaterial( { color: 0xAAAAAA, specular: 0x111111, shininess: 200 } );
-					loader.load( 'src/models/e1m1_map.stl', function ( geometry ) {
-
-						var mesh = new THREE.Mesh( geometry, material );
-
-						mesh.position.set( 0, 0, 0  );
-						mesh.rotation.set( - Math.PI / 2, 0, 0 );
-						mesh.scale.set(0.4, 0.4 , 0.4);
-
-						mesh.castShadow = true;
-						mesh.receiveShadow = true;
-						mesh.name = "map";
-						objects.push(mesh);
-						scene.add( mesh );
-
-					} );
+					var loader = new THREE.OBJLoader();
+					
+					var texture = new THREE.TextureLoader().load('./materials/textures/hex_tile_filthy.png')
+					var material = new THREE.MeshStandardMaterial( { color: 0xAAAAAA, specular: 0x111111, shininess: 200 } );
+					
+					loader.load('materials/models/Working.obj', function (object){
+							object.children[0].material = material;
+							object.children[0].name = "map";
+							objects.push(object.children[0]);
+							//console.log(object);
+							scene.add(object);
+					});
+					// loader.load( 'materials/models/Working.mtl', function ( materials ) {
+					// 	materials.preload();
+					// 	var objLoader = new THREE.OBJLoader();
+					// 	objLoader.setMaterials( materials);
+					// } );
 					
 					renderer = new THREE.WebGLRenderer();
 					renderer.setPixelRatio( window.devicePixelRatio );
@@ -287,14 +300,136 @@
 					window.addEventListener( 'resize', onWindowResize, false );
 									
 					initializeHUD();
+					placeObjects();
+				}
+			
+				function addEnemyPlane(position) {
+				
+					var geo = new THREE.PlaneBufferGeometry(8, 16);
+					var texture = new THREE.TextureLoader().load('materials/textures/enemy/a.png');
+					var alpha = new THREE.TextureLoader().load('materials/textures/enemy/alpha.png');
+					var material = new THREE.MeshBasicMaterial({map: texture, alphaMap: alpha});
+					material.transparent = true;
+
+					var plane = new THREE.Mesh(geo, material);
+					plane.position.set(position.x, position.y+ 8, position.z);
+					plane.lookAt(camera.position.x, 8, camera.position.z);
+					scene.add(plane);
+					return plane;
+				}	
+				
+				function addEnemy(position, health) {
+				
+					var enemy = new Object();
+					enemy.health = health;
+					enemy.plane = addEnemyPlane(position);
+					enemy.objectID = guid();
+					enemies.push(enemy);
+				}
+				
+				function guid() {
+				
+					function s4() {
+					
+						return Math.floor((1 + Math.random()) * 0x10000)
+						.toString(16)
+						.substring(1);
+					}
+					
+					return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+						s4() + '-' + s4() + s4() + s4();
+				}	
+							
+				function Item(itemID, x, y, z, sprite) {
+				
+					this.itemID = itemID;
+					this.x = x;
+					this.y = y;
+					this.z = z;
+					this.sprite = sprite;
+				}
+				
+				var items;
+				function placeObjects() {
+				
+					items = [];
+					
+					placeWeapons();
+					placeAmmo();
+					placeMedkits();
+				}
+				
+				function placeWeapons() {
+				
+					placeItem("./materials/textures/sprites/weapon/shotgun.png",
+					"weapon_shotgun",
+					30, 8, 73, 15);
+				}
+				
+				function placeAmmo() {
+				
+					placeItem(
+						"./materials/textures/sprites/ammo/pistol.png",
+						"ammo_pistol",
+						27, 3, 30, 4);
+						
+					placeItem(
+						"./materials/textures/sprites/ammo/shotgun.png",
+						"ammo_shotgun",
+						32, 3, 49, 4);
+					placeItem(
+						"./materials/textures/sprites/ammo/shotgun.png",
+						"ammo_shotgun",
+						36, 3, 40, 4);
+				}
+				
+				function placeMedkits() {
+				
+					placeItem(
+						"./materials/textures/sprites/medkit/small.png",
+						"medkit_small",
+						52, 3, 1, 4);		
+					placeItem(
+						"./materials/textures/sprites/medkit/small.png",
+						"medkit_small",
+						67, 3, -6, 4);
+					placeItem(
+						"./materials/textures/sprites/medkit/small.png",
+						"medkit_small",
+						81, 3, 4, 4);
+					placeItem(
+						"./materials/textures/sprites/medkit/small.png",
+						"medkit_small",
+						103, 3, -2, 4);						
+				}
+				
+				function placeItem(texturePath, itemID, itemX, itemY, itemZ, scale) {
+				
+					var spriteMap = new THREE.TextureLoader().load(texturePath);
+					var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
+					var sprite = new THREE.Sprite(spriteMaterial);
+					
+					var item = itemID;
+					var x = itemX;
+					var y = itemY;
+					var z = itemZ;
+			
+					sprite.position.set(x, y, z);
+					sprite.scale.x = sprite.scale.y = scale;
+								
+					scene.add(sprite);
+					
+					items.push(new Item(item, x, y, z, sprite));				
 				}
 				
 				// builds the hud to its initial state
 				function initializeHUD() {
 				
-					ammo = [50, 20, 0, 0]
+					weaponsCollected = [2];
+				
+					ammo = [50, 0, 0, 0]
 					ammoIdx = armor = 0;
-					health = 100;
+					health = 25;
 					activeWeapon = 2;
 					
 					updateHUD();
@@ -308,95 +443,39 @@
 					renderer.setSize( windowWidth , windowHeight );
 				}
 				
-				// var applyPhysics = (function() {
-				// 	var timeStep = 5;
-				// 	var timeLeft = timeStep + 1;
-
-				// 	var birdsEye = 100;
-				// 	var kneeDeep = 0.4;
-
-				// 	var raycaster = new THREE.Raycaster();
-				// 	raycaster.ray.direction.set( 0, -1, 0 );
-
-				// 	var angles = new THREE.Vector2();
-				// 	var displacement = new THREE.Vector3();
-
-				// 	return function( dt ) {
-				// 		var platform = scene.getObjectByName( "map", true );
-				// 		if( platform ) {
-
-				// 			timeLeft += dt;
-
-				// 			// run several fixed-step iterations to approximate varying-step
-
-				// 			dt = 5;
-				// 			while( timeLeft >= dt ) {
-
-				// 				var time = 0.3, damping = 0.93, gravity = 0.01, tau = 2 * Math.PI;
-
-				// 				raycaster.ray.origin.copy( motion.position );
-				// 				raycaster.ray.origin.y += birdsEye;
-
-				// 				var hits = raycaster.intersectObject( platform );
-
-				// 				motion.airborne = true;
-
-				// 				// are we above, or at most knee deep in, the platform?
-
-				// 				if( ( hits.length > 0 ) && ( hits[0].face.normal.y > 0 ) ) {
-				// 					var actualHeight = hits[0].distance - birdsEye;
-
-				// 					// collision: stick to the surface if landing on it
-
-				// 					if( ( motion.velocity.y <= 0 ) && ( Math.abs( actualHeight ) < kneeDeep ) ) {
-				// 						motion.position.y -= actualHeight;
-				// 						motion.velocity.y = 0;
-				// 						motion.airborne = false;
-				// 					}
-				// 				}
-
-				// 				if( motion.airborne ) motion.velocity.y -= gravity;
-
-				// 				angles.copy( motion.spinning ).multiplyScalar( time );
-				// 				if( !motion.airborne ) motion.spinning.multiplyScalar( damping );
-
-				// 				displacement.copy( motion.velocity ).multiplyScalar( time );
-				// 				if( !motion.airborne ) motion.velocity.multiplyScalar( damping );
-
-				// 				motion.rotation.add( angles );
-				// 				motion.position.add( displacement );
-
-				// 				// limit the tilt at ±0.4 radians
-
-				// 				motion.rotation.x = Math.max( -0.4, Math.min ( +0.4, motion.rotation.x ) );
-
-				// 				// wrap horizontal rotation to 0...2π
-
-				// 				motion.rotation.y += tau; motion.rotation.y %= tau;
-
-				// 				timeLeft -= dt;
-				// 			}
-				// 		}
-				// 	};
-				// })();
+				function updateEnemies(){
+					for(var i = 0; i < enemies.length; i++){
+						var enemy = enemies[i];
+						enemy.plane.lookAt(controls.getObject().position.x, 8, controls.getObject().position.z);
+						//console.log(enemy.plane.rotation);
+					}
+				}
 				
 				// used for debugging; when true, will log the xyz position of the actor to the console while moving
 				var REPORT_POSITION = false;
-				var gameloop = function( dt ){
-					applyPhysics(dt);
-				}
+				
+				var debug = false;
+				var fireDirection = new THREE.Vector3();
+				var lineOfSight =new THREE.Raycaster( new THREE.Vector3(), camera.getWorldDirection(), 0, 100 );
+				
+				var canFire = true;
+
 				function animate() {
 
 					requestAnimationFrame( animate );
 
 					if ( controlsEnabled === true ) {
-
+					
+						var debugString;
 						raycaster.ray.origin.copy( controls.getObject().position );
 						raycaster.ray.origin.y -= 10;
 						var intersections = raycaster.intersectObjects( objects );
 
 						var onObject = intersections.length > 0;
-
+						if(debug){
+							debugString += onObject ? "True" : "False";
+						}
+						
 						var time = performance.now();
 						var delta = ( time - prevTime ) / 1000;
 
@@ -408,10 +487,10 @@
 						direction.z = Number( moveForward ) - Number( moveBackward );
 						direction.x = Number( moveLeft ) - Number( moveRight );
 						direction.normalize(); // this ensures consistent movements in all directions
-
-						if ( moveForward || moveBackward ) 
+						
+						if ( (moveForward || moveBackward) && onObject) 
 							velocity.z -= direction.z * 400.0 * delta;
-						if ( moveLeft || moveRight ) 
+						if ( (moveLeft || moveRight) && onObject ) 
 							velocity.x -= direction.x * 400.0 * delta;
 
 						if ( onObject === true ) {
@@ -419,10 +498,32 @@
 							velocity.y = Math.max( 0, velocity.y );
 							canJump = true;
 						}
+						
+						if(debug)
+							debugString += "<br/>" + direction.z + "<br/>" + direction.x + "<br/>";
 
 						controls.getObject().translateX( velocity.x * delta );
 						controls.getObject().translateY( velocity.y * delta );
 						controls.getObject().translateZ( velocity.z * delta );	
+						
+						var tester = new THREE.Object3D();
+						tester.copy(controls.getObject());
+
+						tester.translateX( velocity.x * delta * 10);
+						tester.translateY( velocity.y * delta * 10);
+						tester.translateZ( velocity.z * delta * 10);	
+
+						raycaster.ray.origin.copy( tester.position );
+						raycaster.ray.origin.y -= 10;
+						
+						var check = raycaster.intersectObjects( objects );
+						
+						if(check <= 0) {
+							
+							controls.getObject().translateX( - velocity.x * delta );
+							controls.getObject().translateY( - velocity.y * delta );
+							controls.getObject().translateZ( - velocity.z * delta );
+						}
 						
 						if ( controls.getObject().position.y < 10 ) {
 
@@ -431,10 +532,60 @@
 							controls.getObject().position.y = 10;
 							canJump = true;
 						}
-
-						if(weaponFired)
+						
+						detectItem(time);
+						
+						updateEnemies();
+						
+						if(weaponFired && canFire) {
+						
+							lineOfSight.ray.origin.copy(controls.getObject().position);
+							
+							camera.getWorldDirection(fireDirection);
+							
+							fireDirection.normalize();
+							
+							lineOfSight.ray.direction.copy(fireDirection);
+							
+							for(var i = 0; i < enemies.length; i++) {
+							
+								var enemy = enemies[i];
+								
+								var intersect = lineOfSight.intersectObject(enemy.plane);
+								if(intersect.length > 0) {
+								
+									enemy.health -= 10;
+									if(enemy.health <= 0) {
+									
+										scene.remove(enemy.plane);
+										
+										var index = enemies.indexOf(enemy);
+										if(index > -1){
+											enemies.splice(index,1);
+										}
+									}
+								}
+								//console.log(enemy);
+							}
+							
+							fireWeapon(time);
+							canFire = false;
+						}
+						else if(weaponFired)
 							fireWeapon(time);
 						lookAround(time);
+						
+						if(debug){
+						
+							var fired = weaponFired ? "True" : "False"
+							debugString += "<br/> Weapon Fired: " + fired;
+							var currX = controls.getObject().position.x.toFixed(4);
+							var currY = controls.getObject().position.y.toFixed(4);
+							var currZ = controls.getObject().position.z.toFixed(4);
+							debugString += "<br/>" + currX + ", " + currY + ", " + currZ;
+						}
+						
+						debugOut.innerHTML = debugString;
 						
 						if(REPORT_POSITION) {
 					
@@ -452,22 +603,84 @@
 					renderer.render( scene, camera );
 				}
 
+				var healthCollected = false;
+				var timeSinceItemCollected = 0;
+				function detectItem(time) {
+				
+					var currX = Math.round(controls.getObject().position.x);
+					var currY = Math.round(controls.getObject().position.y);
+					var currZ = Math.round(controls.getObject().position.z);
+					
+					var message = "";
+					
+					for(item of items) {
+						if(item.x < currX + 10 && item.x > currX - 10 &&
+						   item.y < currY + 10 && item.y > currY - 10 &&
+						   item.z < currZ + 10 && item.z > currZ - 10) {
+							if(item.itemID.includes("weapon")) {
+								if(item.itemID.includes("shotgun")) {
+									weaponsCollected.push(3);
+									message = "Shotgun"
+								}
+							}
+							else if(item.itemID.includes("ammo")) {
+								if(item.itemID.includes("pistol")) {
+									ammo[0] += 10;
+									message = "Pistol ";
+								}
+								else if(item.itemID.includes("shotgun")) {
+									ammo[1] += 10;
+									message = "Shotgun ";
+								}
+								
+								message += "ammo ";
+							}
+							else if(item.itemID.includes("medkit")) {
+								if(item.itemID.includes("small")) {
+									health += 20;
+									healthCollected = true;
+									message = "Small ";
+								}
+								else if(item.itemID.includes("large")) {
+									health += 20;
+									healthCollected = true;	
+									message = "Large ";	
+								}
+								
+								message += "medkit ";
+							}
+							
+							scene.remove(item.sprite);
+							items.splice(items.indexOf(item), 1);
+							updateHUD();
+							
+							document.getElementById("messages").innerHTML = message +  " collected";
+							timeSinceItemCollected = performance.now();
+							
+							return;
+						}
+					}
+
+					if(time - timeSinceItemCollected > 2600)
+						document.getElementById("messages").innerHTML = "";
+				}
+				
 				function switchWeapon(weaponID) {
-					if(!canSwitchWeapon)
+					if(!canSwitchWeapon || !weaponsCollected.includes(weaponID))
 						return;
-						
+							
 					activeWeapon = weaponID;
 					
 					switch(weaponID) {
 						case 2:
 							ammoIdx = 0;
-							document.getElementById("view_model").innerHTML = "<img id=\"fps\" src=\"./src/textures/view/weapons/pistol/0_idle.png\">";
-							document.getElementById("arms").innerHTML = "<img id=\"arms_panel\" src=\"./src/textures/view/hud/arms/2.png\">";
+							document.getElementById("view_model").innerHTML = "<img id=\"fps\" src=\"./materials/textures/view/weapons/pistol/0_idle.png\">";
+							document.getElementById("arms").innerHTML = "<img id=\"arms_panel\" src=\"./materials/textures/view/hud/arms/2.png\">";
 							break;
 						case 3:
 							ammoIdx = 1;
-							document.getElementById("view_model").innerHTML = "<img id=\"fps\" src=\"./src/textures/view/weapons/shotgun/0_idle.png\">";
-							document.getElementById("arms").innerHTML = "<img id=\"arms_panel\" src=\"./src/textures/view/hud/arms/3.png\">";
+							document.getElementById("view_model").innerHTML = "<img id=\"fps\" src=\"./materials/textures/view/weapons/shotgun/0_idle.png\">";
+							document.getElementById("arms").innerHTML = "<img id=\"arms_panel\" src=\"./materials/textures/view/hud/arms/3.png\">";
 							break;
 					}
 					
@@ -475,7 +688,7 @@
 				}
 				
 				// contains the path to the first-person view textures for weapons; used in fucntion fireWeapon() to cycle through the firing animations of Doom Guy's weapons
-				var fpsDivInnerHTML = "<img id=\"fps\" src=\"./src/textures/view/weapons/pistol/0_idle.png\">";
+				var fpsDivInnerHTML = "<img id=\"fps\" src=\"./materials/textures/view/weapons/pistol/0_idle.png\">";
 				
 				// the time in seconds of the last firing animation cycle
 				var weaponCycleTime = 0;
@@ -490,7 +703,7 @@
 					if(time - weaponCycleTime < 80)
 						return;
 							
-					var animationPath = "<img id=\"fps\" src=\"./src/textures/view/weapons/pistol/";
+					var animationPath = "<img id=\"fps\" src=\"./materials/textures/view/weapons/pistol/";
 					
 					if(fpsDivInnerHTML.includes("0")) {
 						animationPath += "1_fired.png\">";
@@ -505,9 +718,8 @@
 						animationPath += "0_idle.png\">";
 						weaponFired = false;
 						canSwitchWeapon = true;
+						canFire = true;
 					}
-						
-					console.log(animationPath);
 						
 					fpsDivInnerHTML = animationPath;
 					document.getElementById("view_model").innerHTML = fpsDivInnerHTML;
@@ -516,10 +728,10 @@
 				}
 				
 				function fireShotgun(time) {
-					if(time - weaponCycleTime < 130)
+					if(time - weaponCycleTime < 160)
 						return;
 							
-					var animationPath = "<img id=\"fps\" src=\"./src/textures/view/weapons/shotgun/";
+					var animationPath = "<img id=\"fps\" src=\"./materials/textures/view/weapons/shotgun/";
 					
 					if(fpsDivInnerHTML.includes("0")) {
 						animationPath += "1_fired.png\">";
@@ -536,6 +748,7 @@
 						animationPath += "0_idle.png\">";
 						weaponFired = false;
 						canSwitchWeapon = true;
+						canFire = true;
 					}
 											
 					fpsDivInnerHTML = animationPath;
@@ -554,14 +767,14 @@
 				}
 				
 				// contains the path to the Doom Guy Face textures, up to orientation and health-level; used in function lookAround() to simulate the wary gaze of the actor
-				var faceDivInnerHTML = "<img id=\"face_panel\" src=\"./src/textures/view/hud/faces/center/100.png\">";		
+				var faceDivInnerHTML = "<img id=\"face_panel\" src=\"./materials/textures/view/hud/faces/center/100.png\">";		
 					
 				// the time in seconds of the last face swap
 				var timeOfLastLook = 0;	
 				function lookAround(time) {
 				
 					var doLookAround = Math.floor(Math.random() * 90);
-					if(doLookAround != 1 || (faceDivInnerHTML.includes("center") && time - timeOfLastLook < 0.75))
+					if((doLookAround != 1 || (faceDivInnerHTML.includes("center") && time - timeOfLastLook < 0.75)) && !healthCollected)
 						return;
 				
 					var healthLevel;
@@ -589,14 +802,18 @@
 					else 
 						peek = "center";
 						
-					faceDivInnerHTML = "<img id=\"face_panel\" src=\"./src/textures/view/hud/faces/" + peek + "/" + healthLevel + ".png\">";
+					faceDivInnerHTML = "<img id=\"face_panel\" src=\"./materials/textures/view/hud/faces/" + peek + "/" + healthLevel + ".png\">";
 					
 					document.getElementById("faces").innerHTML = faceDivInnerHTML;
 					
+					healthCollected = false;
 					timeOfLastLook = time;
 				}	
 					
 				function updateHUD() {
+				
+					if(health > 100)
+						health = 100;
 				
 					document.getElementById("ammo").innerHTML = ammo[ammoIdx];
 					document.getElementById("health").innerHTML = health;
