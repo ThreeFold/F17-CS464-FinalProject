@@ -570,13 +570,13 @@
 								var intersect = lineOfSight.intersectObject(enemy.plane);
 								if(intersect.length > 0) {
 								
-								var damage = 0;
-								
-								if(activeWeapon == 2)
-									damage = 10;
-								else if(activeWeapon == 3)
-									damage = 25;
-								
+									var damage = 0;
+									
+									if(activeWeapon == 2)
+										damage = 10;
+									else if(activeWeapon == 3)
+										damage = 25;
+									
 									enemy.health -= damage;
 									if(enemy.health <= 0) {
 									
