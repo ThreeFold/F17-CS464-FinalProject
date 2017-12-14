@@ -414,7 +414,12 @@
 					placeItem(
 						"./materials/textures/sprites/medkit/small.png",
 						"medkit_small",
-						103, 3, -2, 4);						
+						103, 3, -2, 4);
+
+					placeItem(
+						"./materials/textures/sprites/medkit/small.png",
+						"medkit_large",
+						30, 4, -109, 5);							
 				}
 				
 				function placeItem(texturePath, itemID, itemX, itemY, itemZ, scale) {
@@ -651,7 +656,7 @@
 									message = "Small ";
 								}
 								else if(item.itemID.includes("large")) {
-									health += 20;
+									health += 50;
 									healthCollected = true;	
 									message = "Large ";	
 								}
