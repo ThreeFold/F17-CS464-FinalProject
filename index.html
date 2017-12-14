@@ -283,7 +283,7 @@
 					document.addEventListener( 'keyup', onKeyUp, false );
 
 					raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
-					addEnemy(new THREE.Vector3(30,0,-96),20);
+					addEnemy(new THREE.Vector3(30,0,-96), 50);
 					//Load stl map
 					var loader = new THREE.OBJLoader();
 					
@@ -565,14 +565,21 @@
 								var intersect = lineOfSight.intersectObject(enemy.plane);
 								if(intersect.length > 0) {
 								
-									enemy.health -= 10;
+								var damage = 0;
+								
+								if(activeWeapon == 2)
+									damage = 10;
+								else if(activeWeapon == 3)
+									damage = 25;
+								
+									enemy.health -= damage;
 									if(enemy.health <= 0) {
 									
 										scene.remove(enemy.plane);
 										
 										var index = enemies.indexOf(enemy);
 										if(index > -1){
-											enemies.splice(index,1);
+											enemies.splice(index, 1);
 										}
 									}
 								}

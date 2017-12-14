@@ -1,0 +1,57 @@
++===============================+
+|  _____ ___ ______  ________   |
+|  |  _  \ | | ||  \/  |  _ \   |
+|  | | | | | | || .  . | |/ /   |
+|  | | | | | | || |\/| | |\ \   |
+|  | |/ /\ \_/ /| |  | | |_| |  |
+|  |___/  \___/ \_|  |_/\____/  |
+|                               | 
++===============================+
+
+ Basic Gameplay
+================
+	You are the eponymous Dumb Guy, fighting hordes of 
+	Hell-Spawn for a singular purpose: survival. 
+	Navigate the world, collect weapons and ammo to 
+	expand your arsenal, collect health when injured, 
+	and stay alive.
+
+ Controls
+==========
+	[  W,A,S,D  ] : Move around (may also use arrow keys)
+	[   Mouse   ] : Aim weapon
+	[   Click   ] : Fire weapon
+	[Number Keys] : Switch weapon
+	
+ Items
+=======
+	Weapons
+	|___
+	|	Pistol
+	|		> Fires 9mm slugs for modest damage
+	|___
+		Shotgun
+			> Fires 12-gauge shells for high damage;
+			  shorter range than the pistol
+			  
+	Ammo
+	|___
+	|	Magazines
+	|		> A 10-round 9mm magazine for the pistol
+	|___
+		Box of Shells
+			> A box of 10 12-gauge shells for the shotgun
+			
+	Medkits
+	|___
+	|	Small
+	|		> Restores 20% of Dumb Guy's health
+	|___
+		Large
+			> Restores 50% of Dumb Guy's health
+
+ Enemies
+=========
+	Hellknight
+		> The footsoldier of Satan's army; attacks with 
+		  vicious teeth and claws
