@@ -25,6 +25,11 @@
 	
  Items
 =======
+	Run over item sprites to collect them. Collecting 
+	weapons adds them to your inventory, collecting 
+	ammo increases your stock of that ammo type, and 
+	collecting med-kits restores health.
+
 	Weapons
 	|___
 	|	Pistol
@@ -42,7 +47,7 @@
 		Box of Shells
 			> A box of 10 12-gauge shells for the shotgun
 			
-	Medkits
+	Med-kits
 	|___
 	|	Small
 	|		> Restores 20% of Dumb Guy's health
