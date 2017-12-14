@@ -52,6 +52,7 @@
 
  Enemies
 =========
-	Hellknight
-		> The footsoldier of Satan's army; attacks with 
+	Hell Knight
+		> The foot soldier of Satan's army; attacks with 
 		  vicious teeth and claws
+		  
